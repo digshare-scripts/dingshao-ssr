@@ -1,22 +1,39 @@
 import {script} from '@digshare/script';
 
 import fetch from 'node-fetch';
-import * as Cheerio from 'cheerio';
 
 interface Payload {}
 
 interface Storage {}
 
+const robotFetch = (url: string) =>
+  fetch(url, {
+    headers: {
+      'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+    },
+  }).then(async res =>
+    res.status === 500 ? Promise.reject({url, html: await res.text()}) : true,
+  );
+
 export default script<Payload, Storage>(async (payload, {storage}) => {
-  // 使用 fetch 获取页面内容。
-  // let html = await fetch('https://www.example.com').then(response =>
-  //   response.text(),
-  // );
+  return Promise.all([
+    // site
+    robotFetch('https://www.dingshao.cn/'),
+    // channel
+    robotFetch('https://www.dingshao.cn/share/channel/ctGFCB'),
+    // message
+    robotFetch('https://www.dingshao.cn/share/message/pRiqbl'),
+  ]).then(
+    () => {
+      console.log("It's OK ~");
+    },
+    ({url, html}) => {
+      console.error({url, html});
 
-  // 使用 Cheerio 解析 HTML 内容。
-  // let $ = Cheerio.load(html);
-
-  return {
-    content: '这是一条价值不菲的消息！',
-  };
+      return {
+        content: `它挂啦它挂啦，它带着 \`500\` 走来啦`,
+        links: [url],
+      };
+    },
+  );
 });
